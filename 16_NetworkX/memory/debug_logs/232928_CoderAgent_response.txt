@@ -1,0 +1,7 @@
+```json
+{
+  "code_variants": {
+    "CODE_1A": "import yfinance as yf\n\ndef get_stock_price(ticker):\n    try:\n        # Create a Ticker object for the given ticker symbol\n        ticker_obj = yf.Ticker(ticker)\n        \n        # Get the most recent historical data\n        data = ticker_obj.history(period=\"1d\")\n        \n        # Extract the closing price from the last row of the data\n        if not data.empty:\n            current_price = data['Close'].iloc[-1]\n            return {'current_price': float(current_price)}\n        else:\n            return {'error': 'No data found for the given ticker.'}\n\n    except Exception as e:\n        return {'error': str(e)}\n\n# Fetch the stock price for Alphabet Inc. (GOOGL)\nresult = get_stock_price(\"GOOGL\")\n\nreturn result"
+  }
+}
+```

@@ -83,9 +83,9 @@ No – if they are about different topics and should be separated
 
 Just respond in one word (Yes or No), and do not provide any further explanation.
 """
-    sys.stderr.write(f"\nComparing chunk {index} and {index+1}\n")
-    sys.stderr.write(f"  Chunk {index} → {chunk1[:60]}{'...' if len(chunk1) > 60 else ''}\n")
-    sys.stderr.write(f"  Chunk {index+1} → {chunk2[:60]}{'...' if len(chunk2) > 60 else ''}\n")
+    print(f"\nComparing chunk {index} and {index+1}")
+    print(f"  Chunk {index} → {chunk1[:60]}{'...' if len(chunk1) > 60 else ''}")
+    print(f"  Chunk {index+1} → {chunk2[:60]}{'...' if len(chunk2) > 60 else ''}")
 
     result = requests.post(OLLAMA_CHAT_URL, json={
         "model": PHI_MODEL,
@@ -94,7 +94,7 @@ Just respond in one word (Yes or No), and do not provide any further explanation
     })
     result.raise_for_status()
     reply = result.json().get("message", {}).get("content", "").strip().lower()
-    sys.stderr.write(f"Model reply: {reply}\n")
+    print(f"Model reply: {reply}")
     return reply.startswith("yes")
 
 

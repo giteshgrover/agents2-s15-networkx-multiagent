@@ -10,7 +10,21 @@ import traceback
 from datetime import datetime
 import asyncio
 import os
+import logging
 from dotenv import load_dotenv
+from rich.console import Console
+
+# Configure logging to use stderr for stdio transport compatibility
+# This must be done before FastMCP initializes to prevent stdout pollution
+logging.basicConfig(
+    level=logging.ERROR,  # Only show ERROR and above
+    format="%(message)s",
+    handlers=[logging.StreamHandler(sys.stderr)],
+    force=True  # Override any existing configuration
+)
+# Set all relevant loggers to ERROR level
+for logger_name in ['mcp', 'mcp.server', 'mcp.server.lowlevel']:
+    logging.getLogger(logger_name).setLevel(logging.ERROR)
 
 # Browser Use Imports
 try:
@@ -92,5 +106,7 @@ async def browser_use_action(string: str, headless: bool = True) -> str:
         return f"Browser Action Failed: {str(e)}"
 
 if __name__ == "__main__":
-    sys.stderr.write("hybrid-browser server READY\n")
+    # Use stderr for all output when using stdio transport
+    console = Console(file=sys.stderr)
+    console.print("hybrid-browser server READY")
     mcp.run(transport="stdio")

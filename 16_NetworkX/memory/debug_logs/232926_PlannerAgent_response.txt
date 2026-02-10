@@ -1,0 +1,58 @@
+```json
+{
+  "plan_graph": {
+    "nodes": [
+      {
+        "id": "T001",
+        "description": "Fetch Alphabet (GOOGL) stock price from financial API.",
+        "agent": "CoderAgent",
+        "agent_prompt": "Write Python code to fetch the current stock price of Alphabet Inc. (GOOGL) using a reliable financial API such as yfinance or similar. Ensure error handling and return only the current price as a floating-point number. Install necessary libraries if needed.",
+        "reads": [],
+        "writes": [
+          "alphabet_stock_price_T001"
+        ]
+      },
+      {
+        "id": "T002",
+        "description": "QA the fetched Alphabet stock price.",
+        "agent": "QAAgent",
+        "agent_prompt": "Review the Alphabet stock price `alphabet_stock_price_T001`. Check if the price is a valid positive number and if it's within a reasonable range compared to historical data (e.g., use a secondary source to verify). If the price seems plausible, set verdict to 'valid'. If there is an error or if the price is implausible, set verdict to 'needs_revision'.",
+        "reads": [
+          "alphabet_stock_price_T001"
+        ],
+        "writes": [
+          "qa_verdict_T002"
+        ]
+      },
+      {
+        "id": "T003",
+        "description": "Format the Alphabet stock price for human readability.",
+        "agent": "FormatterAgent",
+        "agent_prompt": "Format the Alphabet stock price `alphabet_stock_price_T001` into a human-readable string, including the currency symbol (USD) and a clear label. Include a statement confirming the validity of the source based on `qa_verdict_T002`. Example: 'Alphabet (GOOGL) stock price: $XYZ.YY (Source verified)' or 'Alphabet (GOOGL) stock price: [ERROR - Needs Revision]'",
+        "reads": [
+          "alphabet_stock_price_T001",
+          "qa_verdict_T002"
+        ],
+        "writes": [
+          "formatted_stock_price_T003"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "source": "ROOT",
+        "target": "T001"
+      },
+      {
+        "source": "T001",
+        "target": "T002"
+      },
+      {
+        "source": "T002",
+        "target": "T003"
+      }
+    ]
+  },
+  "next_step_id": "T004"
+}
+```
