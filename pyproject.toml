@@ -39,4 +39,5 @@ dependencies = [
     "beautifulsoup4>=4.13.4",
     "aiohttp>=3.11.18",
     "browser-use>=0.11.9",
+    "gradio>=6.5.1",
 ]
