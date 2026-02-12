@@ -391,10 +391,10 @@ sequenceDiagram
 
 ```mermaid
 graph LR
-    A[Agent 1<br/>writes: 'data'] --> B[globals_schema<br/>data: {...}]
+    A[Agent 1<br/>writes: 'data'] --> B[globals_schema<br/>data:]
     B --> C[Agent 2<br/>reads: 'data']
     C --> D[Agent 2<br/>writes: 'result']
-    D --> E[globals_schema<br/>data: {...}<br/>result: {...}]
+    D --> E[globals_schema<br/>data: <br/>result: ]
     E --> F[Agent 3<br/>reads: 'data', 'result']
 ```
 
