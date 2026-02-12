@@ -151,7 +151,7 @@ sequenceDiagram
     Planner-->>Runner: Plan Graph (DAG)
     Runner-->>Loop: Plan Graph
     Loop->>Context: Create ExecutionContext
-    Loop->>Loop: Execute DAG
+    Note over Loop: Execute DAG
     loop For each ready step
         Loop->>Agents: Execute Agent
         Agents-->>Loop: Results
@@ -338,13 +338,13 @@ sequenceDiagram
     A->>L: Initialize
     A->>L: run(query)
     
-    Note over L: Phase 1: File Profiling
+    Note over L,R: Phase 1: File Profiling
     L->>R: Run DistillerAgent (if files)
     R->>MM: Generate
     MM-->>R: File Profiles
     R-->>L: File Profiles
     
-    Note over L: Phase 2: Planning
+    Note over L,R: Phase 2: Planning
     L->>R: Run PlannerAgent
     R->>P: Generate Plan
     P->>MM: Generate
@@ -352,21 +352,21 @@ sequenceDiagram
     P-->>R: Plan Graph
     R-->>L: Plan Graph
     
-    Note over L: Phase 3: Execution Setup
+    Note over L,C: Phase 3: Execution Setup
     L->>C: Create ExecutionContext(plan_graph)
-    C->>C: Build NetworkX Graph
+    Note right of C: Build NetworkX Graph
     
-    Note over L: Phase 4: DAG Execution
+    Note over L,C: Phase 4: DAG Execution
     loop For each iteration
         L->>C: get_ready_steps()
         C-->>L: [step1, step2, ...]
         
         par Parallel Execution
-            L->>L: _execute_step(step1)
+            Note over L: _execute_step(step1)
             L->>R: run_agent(agent_type, input)
             R->>MM: Generate
             MM-->>R: Response
-            R->>R: Parse JSON
+            Note right of R: Parse JSON
             R-->>L: Result
             
             alt Tool Call Required
@@ -374,16 +374,16 @@ sequenceDiagram
                 M->>MC: Execute Tool
                 MC-->>M: Tool Result
                 M-->>L: Result
-                L->>L: Continue ReAct Loop
+                Note over L: Continue ReAct Loop
             end
             
             L->>C: mark_done(step_id, output)
-            C->>C: Extract to globals_schema
+            Note right of C: Extract to globals_schema
         end
     end
     
     L-->>A: ExecutionContext
-    A->>A: Extract Final Outputs
+    Note right of A: Extract Final Outputs
     A-->>U: Result
 ```
 
@@ -525,14 +525,14 @@ sequenceDiagram
     
     A->>R: Output with call_tool
     R-->>L: Result
-    L->>L: Extract tool_name, arguments
+    Note right of L: Extract tool_name, arguments
     L->>M: route_tool_call(tool_name, args)
-    M->>M: Find server with tool
+    Note right of M: Find server with tool
     M->>S: call_tool(tool_name, args)
-    S->>S: Execute Tool
+    Note right of S: Execute Tool
     S-->>M: ToolResult
     M-->>L: ToolResult
-    L->>L: Serialize result
+    Note right of L: Serialize result
     L->>A: Continue with tool_result
 ```
 
