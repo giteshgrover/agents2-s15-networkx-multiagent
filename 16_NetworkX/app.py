@@ -44,7 +44,7 @@ async def main():
 
     console = Console()
     console.print(Panel.fit("[bold cyan]S16 NetworkX Agent System[/bold cyan]", border_style="blue"))
-    pdb.set_trace()
+    # pdb.set_trace()
 
     # 1. Start MCP Servers
     multi_mcp = MultiMCP()

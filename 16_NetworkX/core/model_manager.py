@@ -7,6 +7,7 @@ import requests
 from pathlib import Path
 from google import genai
 from google.genai.errors import ServerError
+from google.api_core import exceptions as google_exceptions
 from dotenv import load_dotenv
 import pdb
 
@@ -54,7 +55,6 @@ class ModelManager:
     async def generate_content(self, contents: list) -> str:
         """Generate content with support for text and images"""
         if self.model_type == "gemini":
-            await self._wait_for_rate_limit()
             return await self._gemini_generate_content(contents)
         elif self.model_type == "ollama":
             # Ollama doesn't support images, fall back to text-only
@@ -69,52 +69,104 @@ class ModelManager:
     # --- Rate Limiting Helper ---
     _last_call = time.time()
     _lock = asyncio.Lock()
+    _min_interval = 4.0  # Minimum 4 seconds between calls (15 RPM = 4s interval)
 
     async def _wait_for_rate_limit(self):
-        """Enforce ~15 RPM limit for Gemini (4s interval)"""
+        """Enforce rate limit for Gemini - ensures sequential API calls"""
         async with ModelManager._lock:
             now = time.time()
             elapsed = now - ModelManager._last_call
-            if elapsed < 60: # 60s buffer for safety
-                sleep_time = 60 - elapsed
+            if elapsed < ModelManager._min_interval:
+                sleep_time = ModelManager._min_interval - elapsed
                 print(f"[Rate Limit] Sleeping for {sleep_time:.2f}s...")
                 await asyncio.sleep(sleep_time)
-            ModelManager._last_call = time.time()
+            # Don't update _last_call here - update it after successful API call
 
 
     async def _gemini_generate(self, prompt: str) -> str:
-        await self._wait_for_rate_limit()
-        try:
-            # ✅ CORRECT: Use truly async method
-            response = await self.client.aio.models.generate_content(
+        """Generate text with retry logic for rate limiting"""
+        return await self._gemini_generate_with_retry(
+            lambda: self.client.aio.models.generate_content(
                 model=self.model_info["model"],
                 contents=prompt
             )
-            return response.text.strip()
+        )
 
-        except ServerError as e:
-            # ✅ FIXED: Raise the exception instead of returning it
-            raise e
-        except Exception as e:
-            # ✅ Handle other potential errors
-            raise RuntimeError(f"Gemini generation failed: {str(e)}")
+    async def _gemini_generate_with_retry(self, api_call_func, max_retries=5):
+        """Execute Gemini API call with exponential backoff retry for 429 errors"""
+        await self._wait_for_rate_limit()
+        
+        for attempt in range(max_retries):
+            try:
+                response = await api_call_func()
+                # Update timestamp AFTER successful call
+                async with ModelManager._lock:
+                    ModelManager._last_call = time.time()
+                return response.text.strip()
+            
+            except ServerError as e:
+                error_str = str(e)
+                error_code = getattr(e, 'code', None)
+                
+                # Check if it's a 429 RESOURCE_EXHAUSTED error
+                # The error can appear as: "429 RESOURCE_EXHAUSTED" or in error dict
+                is_rate_limit_error = (
+                    error_code == 429 or
+                    '429' in error_str or
+                    'RESOURCE_EXHAUSTED' in error_str.upper() or
+                    'Resource exhausted' in error_str
+                )
+                
+                if is_rate_limit_error:
+                    if attempt < max_retries - 1:
+                        # Exponential backoff: 2^attempt * base_delay
+                        base_delay = 30  # Start with 30 seconds
+                        backoff_delay = min(base_delay * (2 ** attempt), 300)  # Cap at 5 minutes
+                        print(f"[Rate Limit] 429 error on attempt {attempt + 1}/{max_retries}. Retrying in {backoff_delay}s...")
+                        
+                        # Update last_call to account for the backoff delay
+                        async with ModelManager._lock:
+                            ModelManager._last_call = time.time() + backoff_delay
+                        
+                        await asyncio.sleep(backoff_delay)
+                        # Re-acquire rate limit before retrying
+                        await self._wait_for_rate_limit()
+                        continue
+                    else:
+                        raise RuntimeError(f"Gemini generation failed after {max_retries} retries: {error_str}")
+                else:
+                    # For non-429 errors, raise immediately
+                    raise RuntimeError(f"Gemini generation failed: {error_str}")
+            
+            except Exception as e:
+                error_str = str(e)
+                # Also check for 429 in generic exceptions (in case error is wrapped)
+                if '429' in error_str or 'RESOURCE_EXHAUSTED' in error_str.upper():
+                    if attempt < max_retries - 1:
+                        base_delay = 30
+                        backoff_delay = min(base_delay * (2 ** attempt), 300)
+                        print(f"[Rate Limit] 429 error (wrapped) on attempt {attempt + 1}/{max_retries}. Retrying in {backoff_delay}s...")
+                        
+                        async with ModelManager._lock:
+                            ModelManager._last_call = time.time() + backoff_delay
+                        
+                        await asyncio.sleep(backoff_delay)
+                        await self._wait_for_rate_limit()
+                        continue
+                
+                # For other exceptions, raise immediately
+                raise RuntimeError(f"Gemini generation failed: {error_str}")
+        
+        raise RuntimeError(f"Gemini generation failed after {max_retries} attempts")
 
     async def _gemini_generate_content(self, contents: list) -> str:
         """Generate content with support for text and images using Gemini"""
-        try:
-            # ✅ Use async method with contents array (text + images)
-            response = await self.client.aio.models.generate_content(
+        return await self._gemini_generate_with_retry(
+            lambda: self.client.aio.models.generate_content(
                 model=self.model_info["model"],
                 contents=contents
             )
-            return response.text.strip()
-
-        except ServerError as e:
-            # ✅ FIXED: Raise the exception instead of returning it
-            raise e
-        except Exception as e:
-            # ✅ Handle other potential errors
-            raise RuntimeError(f"Gemini content generation failed: {str(e)}")
+        )
 
     async def _ollama_generate(self, prompt: str) -> str:
         try:

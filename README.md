@@ -3,7 +3,7 @@
 
 ## Table of Contents
 1. [High-Level Overview](#high-level-overview)
-2. [How to Run] (#how-to-run)
+2. [How to Run](#how-to-run)
 3. [System Architecture](#system-architecture)
 4. [Core Components](#core-components)
 5. [Data Flow](#data-flow)
