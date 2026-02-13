@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 import traceback
 from core.utils import log_json_block, log_step, log_error, log_json_block
+import pdb
 # from agent.agentSession import ExecutionSnapshot
 
 ALLOWED_MODULES = {
@@ -146,7 +147,20 @@ def count_function_calls(code: str) -> int:
 
 def make_tool_proxy(tool_name: str, mcp):
     async def _tool_fn(*args):
-        return await mcp.function_wrapper(tool_name, *args)
+        result = await mcp.function_wrapper(tool_name, *args)
+        # Try to parse JSON strings that look like lists/dicts
+        if isinstance(result, str):
+            # Check if it looks like JSON (starts with [ or {)
+            stripped = result.strip()
+            if (stripped.startswith('[') and stripped.endswith(']')) or \
+               (stripped.startswith('{') and stripped.endswith('}')):
+                try:
+                    import json
+                    parsed = json.loads(result)
+                    return parsed
+                except (json.JSONDecodeError, ValueError):
+                    pass
+        return result
     return _tool_fn
 
 async def run_user_code(code: str, multi_mcp, session_id: str = "default_session") -> dict:

@@ -10,6 +10,7 @@ from ui.visualizer import ExecutionVisualizer
 from rich.live import Live
 from rich.console import Console
 from datetime import datetime
+import pdb
 
 class AgentLoop4:
     def __init__(self, multi_mcp, strategy="conservative"):
@@ -18,6 +19,7 @@ class AgentLoop4:
         self.agent_runner = AgentRunner(multi_mcp)
 
     async def run(self, query, file_manifest, globals_schema, uploaded_files):
+        # pdb.set_trace()
         # Phase 1: File Profiling (if files exist)
         file_profiles = {}
         if uploaded_files:
@@ -73,7 +75,7 @@ class AgentLoop4:
             # Phase 4: Execute DAG with visualization
             await self._execute_dag(context)
 
-            # Phase 5: Return the CONTEXT OBJECT, not summary
+            # Phase 5: Return the CONTEXT OBJECT, not summary..summary is called by the main app.py file
             return context
 
         except Exception as e:
@@ -98,7 +100,7 @@ class AgentLoop4:
         }
         
         # Create visualizer
-        visualizer = ExecutionVisualizer(plan_graph)
+        visualizer = ExecutionVisualizer(plan_graph) # TODO need to understand this better. Is it just for printing?
         console = Console()
         
         # 🔧 DEBUGGING MODE: No Live display, just regular prints
@@ -108,10 +110,11 @@ class AgentLoop4:
         while not context.all_done() and iteration < max_iterations:
             iteration += 1
             
+            # pdb.set_trace()
             # Show current state
             console.print(visualizer.get_layout())
             
-            # Get ready nodes
+            # Get ready nodes i.e. nodes whoes dependencies are all complete
             ready_steps = context.get_ready_steps()
             
             if not ready_steps:
@@ -144,8 +147,10 @@ class AgentLoop4:
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
+            # pdb.set_trace()
             # Process results
             for step_id, result in zip(ready_steps, results):
+                # pdb.set_trace()
                 step_data = context.get_step_data(step_id)
                 if isinstance(result, Exception):
                     visualizer.mark_failed(step_id, result)
@@ -153,7 +158,7 @@ class AgentLoop4:
                     log_error(f"❌ Failed {step_id}: {str(result)}")
                 elif result["success"]:
                     visualizer.mark_completed(step_id)
-                    await context.mark_done(step_id, result["output"])
+                    await context.mark_done(step_id, result["output"]) # If any code is output, it will be executed by the context.mark_done
                     log_step(f"✅ Completed {step_id} ({step_data['agent']})", symbol="✅")
                 else:
                     visualizer.mark_failed(step_id, result["error"])
@@ -213,6 +218,7 @@ class AgentLoop4:
         for turn in range(1, max_turns + 1):
             log_step(f"🔄 {agent_type} Iteration {turn}/{max_turns}", symbol="🔄")
             
+            # pdb.set_trace()
             # Run Agent
             result = await self.agent_runner.run_agent(agent_type, current_input)
             
@@ -277,6 +283,34 @@ class AgentLoop4:
                     if execution_result.get("status") == "success":
                         execution_data = execution_result.get("result", {})
                         inputs = {**inputs, **execution_data}  # Update inputs for iteration 2
+                        
+                        # Extract keys from execution result and update global_schema
+                        # Similar to logic in context.py mark_done method
+                        writes = step_data.get("writes", [])
+                        globals_schema = context.plan_graph.graph['globals_schema']
+                        
+                        for write_key in writes:
+                            extracted = False
+                            
+                            # Strategy 1: Extract from code execution results
+                            if write_key in execution_data:
+                                globals_schema[write_key] = execution_data[write_key]
+                                print(f"✅ Extracted {write_key} = {execution_data[write_key]}")
+                                extracted = True
+                            elif len(execution_data) == 1 and len(writes) == 1:
+                                # If there's only one key in result and one write, map them
+                                key, value = next(iter(execution_data.items()))
+                                globals_schema[write_key] = value
+                                print(f"✅ Extracted {write_key} = {value} (from {key})")
+                                extracted = True
+                            
+                            # Strategy 2: If not extracted, try to extract all keys from execution_data
+                            if not extracted:
+                                # Extract all keys from execution_data to global_schema
+                                for key, value in execution_data.items():
+                                    if key not in globals_schema:
+                                        globals_schema[key] = value
+                                        print(f"✅ Extracted {key} = {value} (from execution result)")
                 
                 # Prepare input for next iteration
                 current_input = build_agent_input(

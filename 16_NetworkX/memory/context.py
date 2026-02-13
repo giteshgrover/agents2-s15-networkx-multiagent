@@ -11,6 +11,7 @@ from rich.console import Console
 from rich.prompt import Prompt
 from rich.panel import Panel
 from rich.text import Text
+import pdb
 
 class ExecutionContextManager:
     def __init__(self, plan_graph: dict, session_id: str = None, original_query: str = None, file_manifest: list = None, debug_mode: bool = False):
@@ -114,6 +115,7 @@ class ExecutionContextManager:
     async def _auto_execute_code(self, step_id, output):
         """Execute code with COMPLETE variable injection"""
         code_to_execute = self._extract_executable_code(output)
+        # pdb.set_trace()
         
         if not code_to_execute:
             return {"status": "error", "error": "No executable code found"}
@@ -148,6 +150,7 @@ class ExecutionContextManager:
                 globals_injection += f'reads_data = {repr(reads_data)}\n'
                 
                 enhanced_code = globals_injection + code
+                # pdb.set_trace()
                 
                 result = await run_user_code(
                     enhanced_code,

@@ -6,6 +6,7 @@ from pathlib import Path
 from rich import print
 from rich.console import Console
 from rich.panel import Panel
+import pdb
 
 # Add 16_NetworkX to python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -25,6 +26,7 @@ async def run_query(agent_loop, query):
         globals_schema={},
         uploaded_files=[]
     )
+    # pdb.set_trace()
     if context:
         summary = context.get_execution_summary()
         if "final_outputs" in summary and summary["final_outputs"]:
@@ -42,6 +44,7 @@ async def main():
 
     console = Console()
     console.print(Panel.fit("[bold cyan]S16 NetworkX Agent System[/bold cyan]", border_style="blue"))
+    pdb.set_trace()
 
     # 1. Start MCP Servers
     multi_mcp = MultiMCP()

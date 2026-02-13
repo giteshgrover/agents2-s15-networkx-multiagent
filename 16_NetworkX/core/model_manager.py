@@ -8,6 +8,7 @@ from pathlib import Path
 from google import genai
 from google.genai.errors import ServerError
 from dotenv import load_dotenv
+import pdb
 
 load_dotenv()
 
@@ -34,6 +35,7 @@ class ModelManager:
         self.model_info = self.config["models"][self.text_model_key]
         self.model_type = self.model_info["type"]
 
+        # pdb.set_trace()
         # Initialize client based on model type
         if self.model_type == "gemini":
             api_key = os.getenv("GEMINI_API_KEY")
@@ -65,7 +67,7 @@ class ModelManager:
         raise NotImplementedError(f"Unsupported model type: {self.model_type}")
 
     # --- Rate Limiting Helper ---
-    _last_call = 0
+    _last_call = time.time()
     _lock = asyncio.Lock()
 
     async def _wait_for_rate_limit(self):
@@ -73,9 +75,9 @@ class ModelManager:
         async with ModelManager._lock:
             now = time.time()
             elapsed = now - ModelManager._last_call
-            if elapsed < 4.5: # 4.5s buffer for safety
-                sleep_time = 4.5 - elapsed
-                # print(f"[Rate Limit] Sleeping for {sleep_time:.2f}s...")
+            if elapsed < 60: # 60s buffer for safety
+                sleep_time = 60 - elapsed
+                print(f"[Rate Limit] Sleeping for {sleep_time:.2f}s...")
                 await asyncio.sleep(sleep_time)
             ModelManager._last_call = time.time()
 

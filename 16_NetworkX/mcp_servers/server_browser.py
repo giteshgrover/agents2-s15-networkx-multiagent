@@ -24,7 +24,7 @@ logging.basicConfig(
 )
 # Set all relevant loggers to ERROR level
 for logger_name in ['mcp', 'mcp.server', 'mcp.server.lowlevel']:
-    logging.getLogger(logger_name).setLevel(logging.ERROR)
+    logging.getLogger(logger_name).setLevel(logging.DEBUG)
 
 # Browser Use Imports
 try:
@@ -59,7 +59,8 @@ async def web_search(string: str, integer: int = 5) -> str:
     """Search the web using multiple engines (DuckDuckGo, Bing, Ecosia, etc.) and return a list of relevant result URLs"""
     try:
         urls = await smart_search(string, integer)
-        return str(urls)
+        import json
+        return json.dumps(urls)
     except Exception as e:
         return f"[Error] Search failed: {str(e)}"
 
