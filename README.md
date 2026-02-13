@@ -1,15 +1,17 @@
-# Architecture Documentation
+
+# Documentation
 
 ## Table of Contents
 1. [High-Level Overview](#high-level-overview)
-2. [System Architecture](#system-architecture)
-3. [Core Components](#core-components)
-4. [Data Flow](#data-flow)
-5. [Agent System](#agent-system)
-6. [MCP Integration](#mcp-integration)
-7. [Execution Model](#execution-model)
-8. [Memory & Context Management](#memory--context-management)
-9. [UI & Visualization](#ui--visualization)
+2. [How to Run] (#how-to-run)
+3. [System Architecture](#system-architecture)
+4. [Core Components](#core-components)
+5. [Data Flow](#data-flow)
+6. [Agent System](#agent-system)
+7. [MCP Integration](#mcp-integration)
+8. [Execution Model](#execution-model)
+9. [Memory & Context Management](#memory--context-management)
+10. [UI & Visualization](#ui--visualization)
 
 ---
 
@@ -32,6 +34,25 @@ The S16 NetworkX Agent System is a **graph-based multi-agent orchestration frame
 
 ---
 
+## How to Run 🏃‍♂️ 
+
+### Interactive Mode
+```bash
+uv run 16_NetworkX/app.py
+```
+Type your query (e.g., "Plan a 3 day trip to Tokyo").
+
+### UI
+```bash
+uv run 16_NetworkX/app.py -- ui
+```
+Then open the UTL link from the logs and type your query
+
+### Automated Test
+```bash
+uv run 16_NetworkX/test_run.py
+```
+---
 ## System Architecture
 
 ### Architecture Diagram
