@@ -157,28 +157,28 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant Loop as AgentLoop4
-    participant Runner as AgentRunner
+    participant U as User
+    participant L as AgentLoop4
+    participant R as AgentRunner
     participant Planner as PlannerAgent
-    participant Context as ExecutionContextManager
+    participant C as ExecutionContextManager
     participant Agents as Other Agents
     
-    User->>Loop: Query
-    Loop->>Runner: Run DistillerAgent (if files)
-    Runner-->>Loop: File Profiles
-    Loop->>Runner: Run PlannerAgent
-    Runner->>Planner: Generate Plan
-    Planner-->>Runner: Plan Graph (DAG)
-    Runner-->>Loop: Plan Graph
-    Loop->>Context: Create ExecutionContext
-    Note over Loop: Execute DAG
+    U->>L: Query
+    L->>Runner: Run DistillerAgent (if files)
+    R-->>L: File Profiles
+    L->>R: Run PlannerAgent
+    R->>Planner: Generate Plan
+    Planner-->>R: Plan Graph (DAG)
+    R-->>L: Plan Graph
+    L->>C: Create ExecutionContext
+    Note over L: Execute DAG
     loop For each ready step
-        Loop->>Agents: Execute Agent
-        Agents-->>Loop: Results
-        Loop->>Context: Update State
+        L->>Agents: Execute Agent
+        Agents-->>L: Results
+        L->>C: Update State
     end
-    Loop-->>User: Final Context
+    L-->>U: Final Context
 ```
 
 **Key Methods**:
